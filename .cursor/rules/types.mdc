@@ -1,0 +1,141 @@
+---
+description: 타입 정의 규칙
+---
+# 타입 정의 규칙
+
+## 공통 타입 사용
+
+```typescript
+import { BaseEntity, BaseFilters, Status, PaginatedResponse } from "@/shared/types";
+```
+
+## 도메인 타입 구조
+
+```typescript
+// features/[domain]/types/index.ts
+import { BaseEntity, BaseFilters, Status } from "@/shared/types";
+
+// 엔티티 타입 (API 응답)
+export interface [Domain] extends BaseEntity {
+  name: string;
+  status: Status;
+  // 도메인별 필드
+}
+
+// 필터 타입
+export interface [Domain]Filters extends BaseFilters {
+  status?: Status;
+  // 도메인별 필터
+}
+
+// 생성 DTO
+export interface Create[Domain]Dto {
+  name: string;
+  // 생성 시 필요한 필드
+}
+
+// 수정 DTO
+export interface Update[Domain]Dto {
+  name?: string;
+  status?: Status;
+  // 수정 가능한 필드 (모두 optional)
+}
+
+// 역할/상태 등 Enum 타입
+export type [Domain]Type = "type1" | "type2" | "type3";
+
+// 레이블 매핑
+export const [DOMAIN]_TYPE_LABELS: Record<[Domain]Type, string> = {
+  type1: "타입 1",
+  type2: "타입 2",
+  type3: "타입 3",
+};
+
+export const [DOMAIN]_STATUS_LABELS: Record<Status, string> = {
+  active: "활성",
+  inactive: "비활성",
+  pending: "대기",
+  deleted: "삭제됨",
+};
+```
+
+## 공통 타입 참조
+
+```typescript
+// shared/types/common.ts
+
+// API 응답
+export interface ApiResponse<T> {
+  data: T;
+  message?: string;
+  success: boolean;
+}
+
+// 페이지네이션 응답
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+// 페이지네이션 파라미터
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+// 기본 필터
+export interface BaseFilters extends PaginationParams {
+  search?: string;
+}
+
+// 상태 타입
+export type Status = "active" | "inactive" | "pending" | "deleted";
+
+// 타임스탬프
+export interface Timestamps {
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ID 필드
+export interface WithId {
+  id: string;
+}
+
+// 기본 엔티티
+export interface BaseEntity extends WithId, Timestamps {}
+
+// Select 옵션
+export interface SelectOption<T = string> {
+  label: string;
+  value: T;
+}
+```
+
+## Zod 스키마 (폼 유효성 검사)
+
+```typescript
+import * as z from "zod";
+
+// 생성 스키마
+export const create[Domain]Schema = z.object({
+  name: z.string().min(1, "이름은 필수입니다"),
+  email: z.string().email("올바른 이메일을 입력하세요"),
+  // ...
+});
+
+// 수정 스키마 (optional 필드)
+export const update[Domain]Schema = z.object({
+  name: z.string().min(1, "이름은 필수입니다").optional(),
+  // ...
+});
+
+// 타입 추론
+export type Create[Domain]FormValues = z.infer<typeof create[Domain]Schema>;
+export type Update[Domain]FormValues = z.infer<typeof update[Domain]Schema>;
+```

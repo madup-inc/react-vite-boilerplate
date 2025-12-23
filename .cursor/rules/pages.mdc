@@ -1,0 +1,209 @@
+---
+description: 페이지 컴포넌트 생성 규칙
+---
+
+# 페이지 컴포넌트 규칙
+
+## 리스트 페이지 구조
+
+```tsx
+// features/[domain]/pages/[Domain]ListPage.tsx
+import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { Breadcrumbs } from "@/shared/components/layout/Breadcrumbs";
+import { [Domain]Table } from "../components/[Domain]Table";
+
+export function [Domain]ListPage() {
+  return (
+    <div>
+      <Breadcrumbs />
+      <PageHeader
+        title="[도메인] 관리"
+        description="[도메인]을 관리합니다."
+      />
+      <[Domain]Table />
+    </div>
+  );
+}
+```
+
+## 상세 페이지 구조
+
+```tsx
+// features/[domain]/pages/[Domain]DetailPage.tsx
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { Breadcrumbs } from "@/shared/components/layout/Breadcrumbs";
+import { Button } from "@/shared/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Skeleton } from "@/shared/components/ui/skeleton";
+import { ConfirmDialog } from "@/shared/components/feedback/ConfirmDialog";
+import { useDialog } from "@/shared/hooks/useDialog";
+import { formatDate } from "@/shared/libs/date";
+import { use[Domain]DetailQuery, useDelete[Domain]Mutation } from "../api";
+import { [Domain]FormDialog } from "../components/[Domain]FormDialog";
+
+export function [Domain]DetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { data, isLoading, isError } = use[Domain]DetailQuery(id!);
+  const deleteMutation = useDelete[Domain]Mutation();
+
+  const editDialog = useDialog();
+  const deleteDialog = useDialog();
+
+  const handleDelete = async () => {
+    if (data) {
+      await deleteMutation.mutateAsync(data.id);
+      navigate("/[domain]s");
+    }
+  };
+
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <div>
+        <Breadcrumbs />
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64" />
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // 에러/데이터 없음 상태
+  if (isError || !data) {
+    return (
+      <div>
+        <Breadcrumbs />
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="text-lg font-medium text-destructive">데이터를 찾을 수 없습니다.</p>
+          <Button variant="outline" className="mt-4" onClick={() => navigate("/[domain]s")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            목록으로 돌아가기
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <Breadcrumbs />
+      <PageHeader
+        title={data.name}
+        description={data.description}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate("/[domain]s")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              목록
+            </Button>
+            <Button variant="outline" onClick={() => editDialog.open()}>
+              <Pencil className="mr-2 h-4 w-4" />
+              수정
+            </Button>
+            <Button variant="destructive" onClick={() => deleteDialog.open()}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              삭제
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>기본 정보</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">필드명</span>
+              <span className="font-medium">{data.field}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">상태</span>
+              <Badge variant={data.status === "active" ? "success" : "secondary"}>
+                {data.status}
+              </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">생성일</span>
+              <span className="font-medium">{formatDate(data.createdAt, "datetime")}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 수정 다이얼로그 */}
+      <[Domain]FormDialog
+        open={editDialog.isOpen}
+        onOpenChange={(open) => !open && editDialog.close()}
+        data={data}
+      />
+
+      {/* 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        open={deleteDialog.isOpen}
+        onOpenChange={(open) => !open && deleteDialog.close()}
+        title="[도메인] 삭제"
+        description={`"${data.name}"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteMutation.isPending}
+      />
+    </div>
+  );
+}
+```
+
+## 라우터 등록
+
+```tsx
+// app/router/index.tsx
+import { [Domain]ListPage } from "@/features/[domain]/pages/[Domain]ListPage";
+import { [Domain]DetailPage } from "@/features/[domain]/pages/[Domain]DetailPage";
+
+// Protected routes 내부에 추가
+<Route path="[domain]s" element={<[Domain]ListPage />} />
+<Route path="[domain]s/:id" element={<[Domain]DetailPage />} />
+```
+
+## 사이드바 메뉴 등록
+
+```tsx
+// app/router/routes.ts
+import { [Icon] } from "lucide-react";
+
+export const routes: RouteConfig[] = [
+  // ... 기존 라우트
+  {
+    path: "/[domain]s",
+    name: "[도메인] 관리",
+    icon: [Icon],
+  },
+];
+```
+
+## 페이지 인덱스 파일
+
+```typescript
+// features/[domain]/pages/index.ts
+export { [Domain]ListPage } from "./[Domain]ListPage";
+export { [Domain]DetailPage } from "./[Domain]DetailPage";
+```

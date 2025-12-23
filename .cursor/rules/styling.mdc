@@ -1,0 +1,175 @@
+---
+description: 스타일링 규칙
+---
+
+# 스타일링 규칙
+
+## Tailwind CSS 사용
+
+이 프로젝트는 Tailwind CSS를 사용합니다. 인라인 스타일이나 CSS modules 대신 Tailwind 클래스를 사용하세요.
+
+## cn 유틸리티
+
+조건부 클래스 적용 시 `cn` 유틸리티를 사용합니다:
+
+```typescript
+import { cn } from "@/shared/libs/utils";
+
+<div className={cn(
+  "base-class",
+  isActive && "active-class",
+  variant === "primary" && "primary-class"
+)} />
+```
+
+## 디자인 토큰 (CSS 변수)
+
+색상은 CSS 변수를 사용합니다:
+
+```css
+/* 배경/전경 */
+bg-background, text-foreground
+
+/* 주요 색상 */
+bg-primary, text-primary-foreground
+bg-secondary, text-secondary-foreground
+
+/* 상태 색상 */
+bg-destructive, text-destructive-foreground
+bg-muted, text-muted-foreground
+bg-accent, text-accent-foreground
+
+/* 컴포넌트 색상 */
+bg-card, text-card-foreground
+bg-popover, text-popover-foreground
+
+/* 테두리/입력 */
+border-border, border-input
+ring-ring
+```
+
+## 반응형 디자인
+
+모바일 우선 접근:
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+  ...
+</div>
+
+<div className="flex flex-col sm:flex-row">
+  ...
+</div>
+```
+
+## 다크 모드
+
+`dark:` 접두사로 다크 모드 스타일 적용 (자동 지원):
+
+```tsx
+<div className="bg-white dark:bg-slate-900">
+  ...
+</div>
+```
+
+## 자주 사용하는 레이아웃 패턴
+
+### Flexbox 정렬
+
+```tsx
+// 가로 정렬
+<div className="flex items-center gap-2">
+
+// 세로 정렬
+<div className="flex flex-col gap-4">
+
+// 양쪽 정렬
+<div className="flex items-center justify-between">
+
+// 중앙 정렬
+<div className="flex items-center justify-center">
+```
+
+### Grid 레이아웃
+
+```tsx
+// 기본 그리드
+<div className="grid grid-cols-2 gap-4">
+
+// 반응형 그리드
+<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+```
+
+### 간격
+
+```tsx
+// 요소 간격
+<div className="space-y-4">  // 세로 간격
+<div className="space-x-2">  // 가로 간격
+<div className="gap-4">      // Flex/Grid 간격
+
+// 패딩
+<div className="p-4">        // 전체
+<div className="px-6 py-4">  // 가로/세로
+
+// 마진
+<div className="mb-6">       // 하단
+<div className="mt-4">       // 상단
+```
+
+## 애니메이션
+
+```tsx
+// 호버 효과
+<div className="transition-colors hover:bg-accent">
+
+// 스케일 효과
+<div className="transition-transform hover:scale-105">
+
+// 투명도 효과
+<div className="transition-opacity hover:opacity-80">
+```
+
+## 카드 스타일
+
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>제목</CardTitle>
+    <CardDescription>설명</CardDescription>
+  </CardHeader>
+  <CardContent>
+    내용
+  </CardContent>
+  <CardFooter>
+    푸터
+  </CardFooter>
+</Card>
+```
+
+## 뱃지 변형
+
+```tsx
+<Badge variant="default">기본</Badge>
+<Badge variant="secondary">보조</Badge>
+<Badge variant="destructive">위험</Badge>
+<Badge variant="outline">아웃라인</Badge>
+<Badge variant="success">성공</Badge>
+<Badge variant="warning">경고</Badge>
+```
+
+## 버튼 변형
+
+```tsx
+<Button variant="default">기본</Button>
+<Button variant="destructive">위험</Button>
+<Button variant="outline">아웃라인</Button>
+<Button variant="secondary">보조</Button>
+<Button variant="ghost">고스트</Button>
+<Button variant="link">링크</Button>
+
+<Button size="default">기본</Button>
+<Button size="sm">작게</Button>
+<Button size="lg">크게</Button>
+<Button size="icon"><Icon /></Button>
+```

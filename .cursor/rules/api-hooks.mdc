@@ -1,0 +1,185 @@
+---
+description: API 및 React Query 훅 생성 규칙
+---
+
+# API & React Query 훅 규칙
+
+## Query Keys 패턴
+
+`@/shared/libs/queryClient`의 queryKeys 패턴을 따릅니다:
+
+```typescript
+import { queryKeys } from "@/shared/libs/queryClient";
+
+// 사용 예시
+queryKeys.users.list(filters)    // ["users", "list", filters]
+queryKeys.users.detail(id)       // ["users", "detail", id]
+```
+
+새 도메인 추가 시 `queryClient.ts`에 키 추가:
+
+```typescript
+export const queryKeys = {
+  // ... 기존 키
+  [domain]: {
+    all: ["[domain]"] as const,
+    lists: () => [...queryKeys.[domain].all, "list"] as const,
+    list: (filters: Record<string, unknown>) =>
+      [...queryKeys.[domain].lists(), filters] as const,
+    details: () => [...queryKeys.[domain].all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.[domain].details(), id] as const,
+  },
+};
+```
+
+## Query Hook 구조
+
+```typescript
+// features/[domain]/api/queries.ts
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/libs/queryClient";
+import { api } from "@/shared/libs/axiosClient";
+import { PaginatedResponse } from "@/shared/types";
+import { [Domain], [Domain]Filters } from "../types";
+
+// 목록 조회
+export function use[Domain]sQuery(filters: [Domain]Filters) {
+  return useQuery({
+    queryKey: queryKeys.[domain].list(filters as Record<string, unknown>),
+    queryFn: () => fetch[Domain]s(filters),
+    placeholderData: (prev) => prev,
+  });
+}
+
+// 상세 조회
+export function use[Domain]DetailQuery(id: string) {
+  return useQuery({
+    queryKey: queryKeys.[domain].detail(id),
+    queryFn: () => fetch[Domain]ById(id),
+    enabled: !!id,
+  });
+}
+
+// API 함수
+async function fetch[Domain]s(filters: [Domain]Filters): Promise<PaginatedResponse<[Domain]>> {
+  return api.get<PaginatedResponse<[Domain]>>("/[domain]s", { params: filters });
+}
+
+async function fetch[Domain]ById(id: string): Promise<[Domain]> {
+  return api.get<[Domain]>(`/[domain]s/${id}`);
+}
+```
+
+## Mutation Hook 구조
+
+```typescript
+// features/[domain]/api/mutations.ts
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/shared/libs/queryClient";
+import { api } from "@/shared/libs/axiosClient";
+import { toast } from "@/shared/hooks/useToast";
+import { [Domain], Create[Domain]Dto, Update[Domain]Dto } from "../types";
+
+// 생성
+export function useCreate[Domain]Mutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Create[Domain]Dto) => api.post<[Domain]>("/[domain]s", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.[domain].lists() });
+      toast({
+        title: "[도메인] 생성 완료",
+        description: "성공적으로 생성되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "[도메인] 생성 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// 수정
+export function useUpdate[Domain]Mutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Update[Domain]Dto }) =>
+      api.patch<[Domain]>(`/[domain]s/${id}`, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.[domain].lists() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.[domain].detail(id) });
+      toast({
+        title: "[도메인] 수정 완료",
+        description: "성공적으로 수정되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "[도메인] 수정 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+// 삭제
+export function useDelete[Domain]Mutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/[domain]s/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.[domain].lists() });
+      toast({
+        title: "[도메인] 삭제 완료",
+        description: "성공적으로 삭제되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "[도메인] 삭제 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+```
+
+## API 인덱스 파일
+
+```typescript
+// features/[domain]/api/index.ts
+export { use[Domain]sQuery, use[Domain]DetailQuery } from "./queries";
+export { useCreate[Domain]Mutation, useUpdate[Domain]Mutation, useDelete[Domain]Mutation } from "./mutations";
+```
+
+## 공통 타입
+
+```typescript
+// shared/types/common.ts
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PaginationParams {
+  page?: number;
+  pageSize?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+}
+
+export interface BaseFilters extends PaginationParams {
+  search?: string;
+}
+```

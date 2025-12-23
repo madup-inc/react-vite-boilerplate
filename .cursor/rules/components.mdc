@@ -1,0 +1,173 @@
+---
+description: 컴포넌트 생성 규칙
+---
+
+# 컴포넌트 생성 규칙
+
+## UI 컴포넌트 사용
+
+### shadcn/ui 컴포넌트
+
+UI 컴포넌트는 반드시 `@/shared/components/ui`에서 가져옵니다:
+
+```typescript
+import { Button } from "@/shared/components/ui/button";
+import { Input } from "@/shared/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Badge } from "@/shared/components/ui/badge";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+```
+
+### 레이아웃 컴포넌트
+
+```typescript
+import { AppLayout } from "@/shared/components/layout/AppLayout";
+import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { Breadcrumbs } from "@/shared/components/layout/Breadcrumbs";
+```
+
+### 테이블 컴포넌트
+
+```typescript
+import { DataTable } from "@/shared/components/table/DataTable";
+import { DataTableToolbar } from "@/shared/components/table/DataTableToolbar";
+import { DataTableColumnHeader } from "@/shared/components/table/DataTableColumnHeader";
+```
+
+### 폼 컴포넌트
+
+```typescript
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/shared/components/form";
+```
+
+### 피드백 컴포넌트
+
+```typescript
+import { ConfirmDialog } from "@/shared/components/feedback/ConfirmDialog";
+import { EmptyState } from "@/shared/components/feedback/EmptyState";
+import { LoadingSpinner } from "@/shared/components/feedback/LoadingSpinner";
+```
+
+## 페이지 컴포넌트 구조
+
+```tsx
+import { PageHeader } from "@/shared/components/layout/PageHeader";
+import { Breadcrumbs } from "@/shared/components/layout/Breadcrumbs";
+
+export function [Domain]ListPage() {
+  return (
+    <div>
+      <Breadcrumbs />
+      <PageHeader
+        title="[도메인] 관리"
+        description="[도메인] 설명"
+        actions={<Button>액션</Button>}
+      />
+      <[Domain]Table />
+    </div>
+  );
+}
+```
+
+## 테이블 컴포넌트 구조
+
+```tsx
+export function [Domain]Table() {
+  const { filters, ...filterActions } = use[Domain]Filters();
+  const { data, isLoading, isError } = use[Domain]sQuery(filters);
+  const columns = use[Domain]Columns();
+
+  return (
+    <DataTable
+      columns={columns}
+      data={data?.items ?? []}
+      totalCount={data?.total ?? 0}
+      page={filters.page || 1}
+      pageSize={filters.pageSize || 10}
+      onPageChange={filterActions.setPage}
+      onPageSizeChange={filterActions.setPageSize}
+      isLoading={isLoading}
+      isError={isError}
+      toolbar={<[Domain]TableToolbar {...filterActions} filters={filters} />}
+    />
+  );
+}
+```
+
+## 폼 컴포넌트 구조
+
+```tsx
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const schema = z.object({
+  field: z.string().min(1, "필수 항목입니다"),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+export function [Domain]Form({ data, onSubmit, isLoading }: Props) {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      field: data?.field || "",
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="field"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>필드명</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "처리 중..." : "저장"}
+        </Button>
+      </form>
+    </Form>
+  );
+}
+```
+
+## 다이얼로그 패턴
+
+```tsx
+import { useDialog } from "@/shared/hooks/useDialog";
+
+// 컴포넌트 내부
+const editDialog = useDialog<DataType>();
+const deleteDialog = useDialog<DataType>();
+
+// 열기
+<Button onClick={() => editDialog.open(data)}>수정</Button>
+
+// 다이얼로그 렌더링
+<Dialog open={editDialog.isOpen} onOpenChange={(open) => !open && editDialog.close()}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>수정</DialogTitle>
+    </DialogHeader>
+    <[Domain]Form data={editDialog.data} onSubmit={handleSubmit} />
+  </DialogContent>
+</Dialog>
+```
