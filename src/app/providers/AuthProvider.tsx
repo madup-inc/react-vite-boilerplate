@@ -1,22 +1,7 @@
-import { createContext, useContext, ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/app/store/useAuthStore";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthUser } from "@/shared/types";
+import { AuthContext } from "./AuthContext";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -43,9 +28,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     initAuth();
-  }, [setUser, setLoading, clearAuth]);
+    // Zustand의 actions는 참조가 변하지 않으므로 의존성에서 제외 가능
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     setLoading(true);
     try {
       // TODO: 실제 로그인 API 호출
@@ -55,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // setUser(response.user);
 
       // 임시 mock 데이터
-      const mockUser: User = {
+      const mockUser: AuthUser = {
         id: "1",
         email,
         name: "관리자",
@@ -63,17 +50,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       };
       localStorage.setItem("access_token", "mock_token");
       setUser(mockUser);
-    } catch (error) {
-      throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setUser]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("access_token");
     clearAuth();
-  };
+  }, [clearAuth]);
 
   return (
     <AuthContext.Provider
@@ -88,13 +73,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }
 

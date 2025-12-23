@@ -31,9 +31,11 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
+type UserFormSubmitData = UserFormValues | Omit<UserFormValues, "password">;
+
 interface UserFormProps {
   user?: User;
-  onSubmit: (data: UserFormValues) => void;
+  onSubmit: (data: UserFormSubmitData) => void;
   isLoading?: boolean;
 }
 
@@ -55,8 +57,9 @@ export function UserForm({ user, onSubmit, isLoading }: UserFormProps) {
   const handleSubmit = (data: UserFormValues) => {
     // Remove password if empty (for editing)
     if (isEditing && !data.password) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...rest } = data;
-      onSubmit(rest as UserFormValues);
+      onSubmit(rest);
     } else {
       onSubmit(data);
     }

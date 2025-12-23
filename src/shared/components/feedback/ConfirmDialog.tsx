@@ -16,7 +16,7 @@ interface ConfirmDialogProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
   variant?: "default" | "destructive";
   isLoading?: boolean;
@@ -39,10 +39,16 @@ export function ConfirmDialog({
     onOpenChange(false);
   };
 
-  const handleConfirm = () => {
-    onConfirm();
-    if (!isLoading) {
+  const handleConfirm = async (e: React.MouseEvent) => {
+    // AlertDialogAction의 기본 동작(다이얼로그 닫기)을 방지
+    e.preventDefault();
+    
+    try {
+      await onConfirm();
+      // 비동기 작업이 성공적으로 완료된 후에만 다이얼로그 닫기
       onOpenChange(false);
+    } catch {
+      // 에러 발생 시 다이얼로그를 열어둠 (에러 처리는 호출자가 담당)
     }
   };
 

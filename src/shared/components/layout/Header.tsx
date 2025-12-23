@@ -1,6 +1,5 @@
 import { Bell, Moon, Sun, LogOut, User, Settings } from "lucide-react";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { useTheme } from "@/app/providers/ThemeProvider";
+import { useAuth, useTheme } from "@/app/providers";
 import { Button } from "@/shared/components/ui/button";
 import {
   DropdownMenu,

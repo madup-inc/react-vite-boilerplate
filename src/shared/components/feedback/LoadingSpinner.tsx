@@ -41,3 +41,15 @@ export function LoadingOverlay({ isLoading, children }: LoadingOverlayProps) {
   );
 }
 
+/**
+ * 전체 화면을 차지하는 로딩 표시 컴포넌트
+ * 인증 확인, 초기 데이터 로딩 등에 사용
+ */
+export function FullPageLoading() {
+  return (
+    <div className="flex h-screen items-center justify-center">
+      <LoadingSpinner size="md" />
+    </div>
+  );
+}
+

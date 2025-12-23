@@ -1,5 +1,6 @@
 export { AppProvider } from "./AppProvider";
 export { QueryProvider } from "./QueryProvider";
 export { ThemeProvider, useTheme } from "./ThemeProvider";
-export { AuthProvider, useAuth } from "./AuthProvider";
+export { AuthProvider } from "./AuthProvider";
+export { useAuth } from "./useAuth";
 

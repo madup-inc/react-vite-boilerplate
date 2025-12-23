@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { ApiError } from "./axiosClient";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -6,10 +7,11 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5, // 5 minutes
       gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
       retry: (failureCount, error) => {
-        // Don't retry on 4xx errors
-        if (error instanceof Error && error.message.includes("4")) {
+        // Don't retry on 4xx client errors (잘못된 요청, 인증 실패 등)
+        if (error instanceof ApiError && error.isClientError()) {
           return false;
         }
+        // 5xx 서버 에러 및 네트워크 에러는 최대 3번까지 재시도
         return failureCount < 3;
       },
       refetchOnWindowFocus: false,
